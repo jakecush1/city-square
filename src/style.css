@@ -1,0 +1,130 @@
+:root {
+  --bg: #0b0f15;
+  --ink: #e6e2d8;
+  --muted: #9aa3ad;
+  --line: rgba(255, 255, 255, 0.12);
+  --panel: rgba(9, 11, 16, 0.82);
+  --tavern: #e8b45a;
+  --studio: #ff6fcf;
+  --mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --serif: "Cinzel", Georgia, "Times New Roman", serif;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#stage { position: fixed; inset: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+
+.vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 2;
+  background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%);
+  mix-blend-mode: multiply;
+}
+
+/* --- HUD ----------------------------------------------------------------- */
+.hud-top {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: max(16px, env(safe-area-inset-top)) 20px 0;
+  pointer-events: none;
+}
+.hud-brand { display: flex; flex-direction: column; gap: 4px; text-shadow: 0 2px 12px rgba(0,0,0,0.8); }
+.hud-brand-name { font-family: var(--serif); font-weight: 700; font-size: 20px; letter-spacing: 0.22em; color: #f1e6c8; }
+.hud-brand-sub { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.hud-right { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: right; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+
+.hint {
+  position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  z-index: 10; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.9); pointer-events: none; white-space: nowrap;
+  transition: opacity 0.6s;
+}
+
+/* --- door chips ------------------------------------------------------------ */
+.doors {
+  position: fixed; left: 50%; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 30px); transform: translateX(-50%);
+  z-index: 10; display: flex; gap: 12px; padding: 0 12px; max-width: 100vw;
+}
+.door {
+  appearance: none; cursor: pointer; text-align: left; color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent, #fff);
+  border-radius: 10px; padding: 10px 14px 11px; min-width: 220px;
+  display: flex; flex-direction: column; gap: 3px; font-family: var(--mono);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  transition: transform 0.25s, border-color 0.25s, background 0.25s;
+}
+.door[data-dest="tavern"] { --accent: var(--tavern); }
+.door[data-dest="studio"] { --accent: var(--studio); }
+.door:hover, .door.is-hot { transform: translateY(-3px); border-color: var(--accent); background: rgba(14, 17, 24, 0.92); }
+.door:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.door-kicker { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
+.door-name { font-family: var(--serif); font-size: 15px; font-weight: 600; letter-spacing: 0.04em; color: #f5f0e4; }
+.door-blurb { font-size: 11px; color: var(--muted); }
+
+/* --- tooltip ---------------------------------------------------------------- */
+.tooltip {
+  position: fixed; left: 0; top: 0; z-index: 12; pointer-events: none;
+  transform: translate(18px, 18px); opacity: 0; transition: opacity 0.18s;
+  background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent, #fff);
+  border-radius: 8px; padding: 9px 12px 10px; max-width: 260px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.tooltip.is-on { opacity: 1; }
+.tooltip-name { display: block; font-family: var(--serif); font-size: 14px; font-weight: 600; color: #f5f0e4; }
+.tooltip-blurb { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
+.tooltip-cta { display: block; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-top: 7px; }
+@media (pointer: coarse) { .tooltip { display: none; } }
+
+/* --- toast ------------------------------------------------------------------ */
+.toast {
+  position: fixed; left: 50%; top: 22%; transform: translateX(-50%); z-index: 30;
+  background: rgba(20, 10, 12, 0.92); border: 1px solid rgba(255, 120, 120, 0.4); border-radius: 10px;
+  padding: 14px 18px; max-width: min(520px, 92vw); font-size: 12px; line-height: 1.6; color: #f3dede;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+}
+.toast[hidden] { display: none; }
+.toast code { font-family: var(--mono); background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #fff; }
+.toast strong { color: #fff; }
+
+/* --- fade and portal ---------------------------------------------------------- */
+.fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; }
+.fade.is-blocking { pointer-events: auto; }
+
+.portal {
+  position: fixed; inset: 0; z-index: 50; background: #000;
+  display: flex; flex-direction: column;
+  transform: translateY(102%); transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.portal[hidden] { display: none; }
+.portal.is-open { transform: translateY(0); }
+.portal-bar {
+  flex: 0 0 auto; height: 38px; display: flex; align-items: center; gap: 14px; padding: 0 10px 0 6px;
+  background: #0a0c11; border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: 0.08em;
+}
+.portal-back {
+  appearance: none; cursor: pointer; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #f1e6c8; background: rgba(255,255,255,0.06); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px;
+}
+.portal-back:hover { background: rgba(255,255,255,0.12); }
+.portal-title { font-family: var(--serif); color: #f5f0e4; letter-spacing: 0.06em; text-transform: none; }
+.portal-open { margin-left: auto; color: var(--muted); text-decoration: none; }
+.portal-open:hover { color: #fff; }
+.portal-frame { flex: 1 1 auto; width: 100%; border: 0; background: #000; }
+
+@media (max-width: 640px) {
+  .hud-brand-name { font-size: 16px; }
+  .hud-right { display: none; }
+  .doors { flex-direction: column; gap: 8px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 26px); width: min(92vw, 360px); }
+  .door { min-width: 0; width: 100%; padding: 8px 12px 9px; }
+  .portal-open { display: none; }
+}
