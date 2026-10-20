@@ -5,12 +5,9 @@
   "type": "module",
   "description": "A rainy-night Three.js street. Pick a door: the tavern opens Gilded Minstrels, the apartment opens the Bedroom Studio.",
   "scripts": {
-    "dev": "vite --port 5173 --strictPort",
-    "dev:tavern": "npm --prefix gilded-minstrels run dev -- --port 5174 --strictPort",
-    "dev:studio": "npm --prefix bedroom-studio run dev -- --port 5175 --strictPort",
-    "dev:all": "node scripts/dev-all.mjs",
+    "dev": "vite --port 5170 --strictPort",
     "build": "vite build",
-    "preview": "vite preview --port 5173"
+    "preview": "vite preview --port 5170"
   },
   "dependencies": {
     "three": "0.186.1"
