@@ -166,7 +166,7 @@ function buildTavern() {
     windows,
     outline,
     lamps: [lamp],
-    doorLocal: { pos: new THREE.Vector3(8.6, 2.0, 5.3), target: new THREE.Vector3(5.0, 1.5, 3.9) },
+    door: { at: new THREE.Vector3(5.12, 1.5, 3.9), normal: new THREE.Vector3(1, 0, 0) },
     smearsLocal: [
       { at: new THREE.Vector3(5.4, 0, -1.2), color: 0xffa050, width: 5.4, length: 11, opacity: 0.5 },
       { at: new THREE.Vector3(1.6, 0, 6.3), color: 0xffa050, width: 2.4, length: 6, opacity: 0.2 },
@@ -278,7 +278,7 @@ function buildApartment() {
     outline,
     lamps: [lamp],
     neon: { mat: neonMat, light: neonLight, halo: neonHalo.material, baseLight: 12, baseHalo: 0.3 },
-    doorLocal: { pos: new THREE.Vector3(-8.6, 2.0, 4.6), target: new THREE.Vector3(-5.0, 1.5, 2.6) },
+    door: { at: new THREE.Vector3(-5.04, 1.45, 2.6), normal: new THREE.Vector3(-1, 0, 0) },
     smearsLocal: [
       { at: new THREE.Vector3(-6.2, 0, 5.2), color: 0xff5fcf, width: 3.0, length: 14, opacity: 0.45 },
       { at: new THREE.Vector3(-3.35, 0, 8.5), color: 0xffb060, width: 3.4, length: 10, opacity: 0.36 },
@@ -290,6 +290,8 @@ function buildApartment() {
 }
 
 // ---- the square --------------------------------------------------------------------------------------
+const DOOR_STANDOFF = 2.4; // how far in front of a door the camera ends up
+
 export function buildStreet(scene, { viewer = new THREE.Vector3(0, 5, 27) } = {}) {
   const animated = [];
   const lamps = [];
@@ -318,7 +320,10 @@ export function buildStreet(scene, { viewer = new THREE.Vector3(0, 5, 27) } = {}
     b.group.position.set(x, 0, z);
     b.group.rotation.y = rotY;
     b.group.updateMatrixWorld(true);
-    b.doorView = { pos: b.group.localToWorld(b.doorLocal.pos.clone()), target: b.group.localToWorld(b.doorLocal.target.clone()) };
+    // the camera walks straight up to the door and stops square in front of it, at eye height
+    const doorAt = b.group.localToWorld(b.door.at.clone());
+    const doorOut = b.door.normal.clone().transformDirection(b.group.matrixWorld);
+    b.doorView = { target: doorAt, pos: doorAt.clone().addScaledVector(doorOut, DOOR_STANDOFF).setY(doorAt.y + 0.3) };
     for (const s of b.smearsLocal) {
       const w = b.group.localToWorld(s.at.clone());
       add(smear(w.x, w.z, s.color, { width: s.width, length: s.length, opacity: s.opacity, angle: Math.atan2(viewer.x - w.x, viewer.z - w.z) }));

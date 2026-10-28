@@ -81,7 +81,8 @@ function updateTweens(dt) {
   for (let i = tweens.length - 1; i >= 0; i--) {
     const tw = tweens[i];
     tw.t = Math.min(tw.t + dt, tw.dur);
-    tw.onUpdate(easeInOut(tw.t / tw.dur));
+    const u = tw.t / tw.dur;
+    tw.onUpdate(easeInOut(u), u);
     if (tw.t >= tw.dur) {
       tweens.splice(i, 1);
       tw.onDone();
@@ -89,11 +90,14 @@ function updateTweens(dt) {
   }
 }
 
-function flyCamera(pos, target, dur) {
+// Straight-line flight. With `lockBy` set, the gaze settles on `target` within that fraction of the
+// flight and stays there, so the destination sits centred while the camera closes in on it.
+function flyCamera(pos, target, dur, { lockBy = 1 } = {}) {
   const p0 = camera.position.clone(), t0 = controls.target.clone();
-  return tween(dur, (k) => {
+  return tween(dur, (k, u) => {
     camera.position.lerpVectors(p0, pos, k);
-    controls.target.lerpVectors(t0, target, k);
+    const s = Math.min(1, u / lockBy);
+    controls.target.lerpVectors(t0, target, s * s * (3 - 2 * s));
   });
 }
 function fadeTo(opacity, dur) {
@@ -195,7 +199,7 @@ async function enter(id, { instant = false } = {}) {
 
   const ping = reachable(dest.url);
   if (!instant) {
-    const fly = flyCamera(b.doorView.pos, b.doorView.target, 1.5);
+    const fly = flyCamera(b.doorView.pos, b.doorView.target, 1.5, { lockBy: 0.35 });
     await tween(0.8, () => {});
     await Promise.all([fadeTo(1, 0.7), fly]);
   } else {
@@ -273,7 +277,10 @@ function loop() {
   street.update(dt, t);
   updateTweens(Math.min(raw, 0.5)); // camera walks and fades follow wall-clock time
   updateGlow(dt);
-  controls.update();
+  // OrbitControls.update() ignores `enabled` and would drag the camera back onto its 34-unit orbit
+  // every frame, so while a flight owns the camera we only keep it looking at the moving target.
+  if (controls.enabled) controls.update();
+  else camera.lookAt(controls.target);
   ink.render(t);
   if (hintShown && t > 14) {
     hintShown = false;
